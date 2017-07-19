@@ -116,15 +116,26 @@ var TinyMCEInput = React.createClass({
   },
   componentWillReceiveProps: function (nextProps) {
     if(nextProps.value !== this.state.value) {
+      var newValue = nextProps.value;
+      var matches = newValue.match(/(.*)(<\/[^<]+>)/);
+      if (matches && matches.length > 2) {
+        var beforeClosingTag = matches[1];
+        var closingTag = matches[2];
+        if (beforeClosingTag.substring(beforeClosingTag.length - 7) === '&nbsp; ') {
+          newValue = beforeClosingTag.substring(0, beforeClosingTag.length - 7) + ' &nbsp;' + closingTag;
+        } else if (beforeClosingTag[beforeClosingTag.length - 1] === ' ') {
+          newValue = beforeClosingTag.substring(0, beforeClosingTag.length - 1) + '&nbsp;' + closingTag;
+        }
+      }
       var editor = tinymce.get(this.state.id);
       if(editor) {
         if(!this.props.ignoreUpdatesWhenFocused || tinymce.focusedEditor !== editor || this.isDropOverrideFlagged()) {
           var bookmark = editor.selection.getBookmark(2, true);
-          editor.setContent(nextProps.value);
+          editor.setContent(newValue);
           editor.selection.moveToBookmark(bookmark);
         }
       }
-      this.setState({value: nextProps.value});
+      this.setState({value: newValue});
     }
   },
   setupPassthroughEvents: function(editor) {
